@@ -8,6 +8,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import Icon from './components/Icons';
+import SceneBackground, { useSceneMotion } from './components/SceneBackground';
 import {
   WidgetDataProvider,
   WidgetContent,
@@ -69,6 +70,7 @@ function WorkspaceDesk() {
   const focusNoteId = useRef<string | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const summary = useWidgetSummary();
+  const sceneMotion = useSceneMotion();
   const selected = items.find((i) => i.id === activeId);
   const topTitle = editing
     ? '布置空间'
@@ -380,10 +382,10 @@ function WorkspaceDesk() {
   }, [library, about, editing]);
   return (
     <div className={'observatory ' + (editing ? 'is-arranging' : '')}>
-      <img
-        className="scene-backdrop"
+      <SceneBackground
         src={import.meta.env.BASE_URL + 'art/observatory.png'}
-        alt=""
+        animated={sceneMotion.animated}
+        arranging={editing}
       />
       <header className="app-header">
         <div className="app-brand">
@@ -393,8 +395,19 @@ function WorkspaceDesk() {
           <small className="latin">PERSONAL SPACE</small>
         </div>
         <div className="header-actions">
-          <button className="preview-tag" onClick={() => setAbout(!about)}>
-            交互预览
+          <button className="preview-tag" aria-label="查看预览说明" title="预览说明" onClick={() => setAbout(!about)}>
+            <span className="preview-tag-label">交互预览</span>
+            <Icon name="info" size={19} className="preview-tag-icon" />
+          </button>
+          <button
+            className="round-control scene-motion-control"
+            aria-label={sceneMotion.reduced ? '背景静止：跟随系统减少动态效果设置' : sceneMotion.animated ? '暂停背景动态' : '开启背景动态'}
+            aria-pressed={sceneMotion.animated}
+            title={sceneMotion.reduced ? '跟随系统减少动态效果设置' : sceneMotion.animated ? '暂停背景动态' : '开启背景动态'}
+            disabled={sceneMotion.reduced}
+            onClick={sceneMotion.toggle}
+          >
+            <Icon name={sceneMotion.animated ? 'pause' : 'play'} size={20} />
           </button>
           <button
             className={'round-control ' + (library ? 'is-active' : '')}
@@ -632,6 +645,7 @@ function WorkspaceDesk() {
             这是桌面布局与模块呈现的交互预览。记录和布局仅保存在当前浏览器，插件安装与云同步尚未接入。
           </p>
           <p>手机以列表展示，保留电脑的桌面位置。</p>
+          <p>右上角可暂停背景动态。书写、布置空间或离开页面时，动态会自动暂停。</p>
         </aside>
       )}
       {(toast || warning) && (

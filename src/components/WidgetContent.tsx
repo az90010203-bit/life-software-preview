@@ -215,7 +215,7 @@ export function useWidgetSummary(): { notesCount: number; calendarDays: number; 
 }
 
 function NoteList({ notes }: { notes: Note[] }) {
-  if (notes.length === 0) return <p className="wc-empty">还没有片段。想到什么，就先放下来。</p>;
+  if (notes.length === 0) return <p className="wc-empty">还没有收好的片段。</p>;
   return (
     <ol className="wc-notes-list" aria-label="已收好的片段">
       {notes.map((note) => (
@@ -250,31 +250,44 @@ export function WidgetContent({ kind, mode, instanceId }: {
       {kind === 'notes' && (
         <>
           {mode === 'panel' && (
-            <form className="wc-form" onSubmit={(event) => { event.preventDefault(); data.saveDraft(); }} onKeyDown={(event) => {
+            <form className="wc-form wc-notes-form" onSubmit={(event) => { event.preventDefault(); data.saveDraft(); }} onKeyDown={(event) => {
               if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing && content.draft.trim()) {
                 event.preventDefault();
                 data.saveDraft();
               }
             }}>
-              <label className="wc-field-label" htmlFor={controlId}>此刻想到什么？</label>
-              <textarea className="wc-textarea" id={controlId} aria-label="随手记内容" placeholder="把脑海里的那一点，先放在这里。" rows={4} value={content.draft} onChange={(event) => data.setDraft(event.target.value)} />
-              <button className="wc-primary-action" type="submit" disabled={!content.draft.trim()}>收好片段</button>
-              {data.notesFeedback && <p className="wc-feedback" role="status">{data.notesFeedback}</p>}
+              <label className="wc-field-label wc-writing-label" htmlFor={controlId}>此刻</label>
+              <textarea className="wc-textarea wc-notes-writing" id={controlId} aria-label="随手记内容" placeholder="把脑海里的那一点，先放在这里。" rows={4} value={content.draft} onChange={(event) => data.setDraft(event.target.value)} />
+              <div className="wc-compose-footer">
+                {data.notesFeedback && <p className="wc-feedback" role="status">{data.notesFeedback}</p>}
+                <button className="wc-primary-action" type="submit" disabled={!content.draft.trim()}>收好片段</button>
+              </div>
             </form>
           )}
-          <p className="wc-count">{content.notes.length} 条已收好</p>
-          <NoteList notes={mode === 'card' ? content.notes.slice(0, 2) : content.notes} />
+          <div className="wc-history">
+            <header className="wc-history-heading">
+              <h3 className="wc-history-title">{mode === 'card' ? '最近收好' : '收好的片段'}</h3>
+              <span className="wc-count">{content.notes.length} 条</span>
+            </header>
+            <NoteList notes={mode === 'card' ? content.notes.slice(0, 2) : content.notes} />
+          </div>
         </>
       )}
 
       {kind === 'today' && (mode === 'card' ? (
         <>
-          <p className="wc-today-summary">{content.today[todayKey] || '今天还没有选定重点。'}</p>
-          <p className="wc-caption">为今天留下一件最重要的事。</p>
+          <div className="wc-today-heading">
+            <span className="wc-field-label wc-today-label">重点</span>
+            <time className="wc-today-date" dateTime={todayKey}>{String(date.getMonth() + 1).padStart(2, '0')}.{String(date.getDate()).padStart(2, '0')}</time>
+          </div>
+          <p className="wc-today-summary">{content.today[todayKey] || '还没有选定重点。'}</p>
         </>
       ) : (
         <form className="wc-form" onSubmit={(event) => { event.preventDefault(); data.saveToday(); }}>
-          <label className="wc-field-label" htmlFor={controlId}>今天最重要的一件事</label>
+          <div className="wc-today-heading">
+            <label className="wc-field-label wc-today-label" htmlFor={controlId}>重点</label>
+            <time className="wc-today-date" dateTime={todayKey}>{String(date.getMonth() + 1).padStart(2, '0')}.{String(date.getDate()).padStart(2, '0')}</time>
+          </div>
           <input className="wc-input" id={controlId} type="text" aria-label="今天的重点" placeholder="今天，想把哪件事做好？" value={data.todayDraft} onChange={(event) => data.setTodayDraft(event.target.value)} />
           <button className="wc-primary-action" type="submit">保存重点</button>
           {data.todayFeedback && <p className="wc-feedback" role="status">{data.todayFeedback}</p>}
@@ -287,10 +300,18 @@ export function WidgetContent({ kind, mode, instanceId }: {
         <>
           <header className="wc-calendar-card-header">
             <p className="wc-calendar-card-month">{date.getFullYear()} 年 {date.getMonth() + 1} 月</p>
-            <time className="wc-calendar-today-number" dateTime={todayKey} aria-label={`今天是${date.getMonth() + 1}月${date.getDate()}日`}>{date.getDate()}</time>
           </header>
-          <p className="wc-calendar-card-summary">{todayRecord || (recentRecord ? `${Number(recentRecord[0].slice(-2))} 日 · ${recentRecord[1]}` : '这个月还没留下记录。')}</p>
-          <p className="wc-caption">本月 {monthRecords.length} 天有记录</p>
+          <div className="wc-calendar-card-main">
+            <div className="wc-calendar-date-block">
+              <time className="wc-calendar-today-number" dateTime={todayKey} aria-label={`今天是${date.getMonth() + 1}月${date.getDate()}日`}>{date.getDate()}</time>
+              <span className="wc-calendar-card-weekday">{new Intl.DateTimeFormat('zh-CN', { weekday: 'long' }).format(date)}</span>
+            </div>
+            <div className="wc-calendar-card-detail">
+              <p className="wc-calendar-card-label">{todayRecord ? '今天记下' : recentRecord ? `最近 · ${Number(recentRecord[0].slice(-2))} 日` : '今日日记'}</p>
+              <p className="wc-calendar-card-summary">{todayRecord || recentRecord?.[1] || '今天还没有留下记录。'}</p>
+              {monthRecords.length > 0 && <p className="wc-caption">本月 {monthRecords.length} 天有记录</p>}
+            </div>
+          </div>
         </>
       ))}
       {data.storageWarning && <p className="wc-storage-warning" role="status">{data.storageWarning}</p>}

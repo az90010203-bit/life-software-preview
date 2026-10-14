@@ -20,6 +20,9 @@ export type IconName =
   | 'card'
   | 'panel'
   | 'undo'
+  | 'play'
+  | 'pause'
+  | 'info'
   | 'add';
 
 const glyphs: Record<IconName, ReactNode> = {
@@ -119,6 +122,19 @@ const glyphs: Record<IconName, ReactNode> = {
     <>
       <path d="M11 8.5 5.5 14l5.5 5.5" />
       <path d="M6 14h11.5C22.2 14 26 17.4 26 22C26 23.5 25.6 24.9 24.8 26" />
+    </>
+  ),
+  play: <path d="M11 6.7Q9 5.5 9 8v16q0 2.5 2 1.3l13-8q2-1.3 0-2.6Z" />,
+  pause: (
+    <>
+      <rect x="8" y="6" width="5" height="20" rx="2.2" />
+      <rect x="19" y="6" width="5" height="20" rx="2.2" />
+    </>
+  ),
+  info: (
+    <>
+      <circle cx="16" cy="16" r="12" />
+      <path d="M16 14v9M16 9.1v.3" />
     </>
   ),
   add: (
