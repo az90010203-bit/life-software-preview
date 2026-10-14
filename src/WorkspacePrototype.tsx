@@ -646,6 +646,10 @@ function WorkspaceDesk() {
           </p>
           <p>手机以列表展示，保留电脑的桌面位置。</p>
           <p>右上角可暂停背景动态。书写、布置空间或离开页面时，动态会自动暂停。</p>
+          <p>
+            字体采用 HarmonyOS Sans（鸿蒙 Sans）。{' '}
+            <a href={import.meta.env.BASE_URL + 'fonts/HarmonyOS-Sans-LICENSE.txt'} target="_blank" rel="noreferrer">许可声明</a>
+          </p>
         </aside>
       )}
       {(toast || warning) && (
