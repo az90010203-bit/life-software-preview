@@ -1,4 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="18" fill="#234d42" />
-  <text x="32" y="45" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="42" fill="#f5f5ef">人</text>
+  <rect width="64" height="64" rx="17" fill="#e9edf0" />
+  <g fill="none" stroke="#3b5669" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 12a21 21 0 1 0 11 30" />
+    <path d="M16 43 44 15M25 50 53 22" />
+    <rect x="41" y="10" width="9" height="9" rx="2" transform="rotate(45 45.5 14.5)" />
+  </g>
 </svg>
