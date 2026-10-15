@@ -1591,3 +1591,7 @@ svg {
   [data-kind='calendar'] .wc-calendar-caption { display: none; }
   .wc-calendar-cell, .wc-calendar-day-button { min-height: 30px; }
 }
+
+/* Leave room for the resize handle even in short cards. */
+.is-arranging .mode-card .widget-content { padding-bottom: 30px; }
+.is-arranging .mode-card .resize-grip { background: #f3f6f9e6; }

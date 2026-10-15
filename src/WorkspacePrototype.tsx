@@ -18,6 +18,7 @@ import {
 import { pluginRegistry, primaryPluginId } from './plugins';
 import {
   createItem,
+  minimumItemSize,
   loadWorkspace,
   saveWorkspace,
   setItemMode,
@@ -249,7 +250,7 @@ function WorkspaceDesk() {
       box = snapped.box;
       setGuides(snapped.guides);
     } else {
-      const min = pluginRegistry.describe(current.item.kind).minPanel;
+      const min = minimumItemSize(current.item);
       box = {
         ...current.box,
         width: Math.min(
@@ -279,11 +280,11 @@ function WorkspaceDesk() {
               ...(current.type === 'resize'
                 ? {
                     width: Math.max(
-                      pluginRegistry.describe(i.kind).minPanel.width,
+                      minimumItemSize(i).width,
                       box.width / widthScale,
                     ),
                     height: Math.max(
-                      pluginRegistry.describe(i.kind).minPanel.height,
+                      minimumItemSize(i).height,
                       box.height / heightScale,
                     ),
                   }
@@ -575,10 +576,10 @@ function WorkspaceDesk() {
                   />
                 </div>
               )}
-              {editing && item.mode === 'panel' && (
+              {editing && item.mode !== 'icon' && (
                 <button
                   className="resize-grip"
-                  aria-label={'调整' + descriptor.title + '面板大小'}
+                  aria-label={'调整' + descriptor.title + modeTitles[item.mode] + '大小'}
                   title="拖动调整大小"
                   onPointerDown={(event) => startGesture(event, item, 'resize')}
                   onPointerMove={moveGesture}

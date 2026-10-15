@@ -72,7 +72,17 @@ export function createItem(
   };
 }
 
+export function minimumItemSize(item: Pick<DeskItem, 'kind' | 'mode'>) {
+  const definition = pluginRegistry.describe(item.kind);
+  if (item.mode === 'card') return {
+    width: Math.min(260, definition.sizes.card.width),
+    height: Math.min(120, definition.sizes.card.height),
+  };
+  return item.mode === 'panel' ? definition.minPanel : definition.sizes.icon;
+}
+
 export function setItemMode(item: DeskItem, mode: WidgetMode): DeskItem {
+  if (item.mode === mode) return item;
   return { ...item, mode, ...pluginRegistry.describe(item.kind).sizes[mode] };
 }
 
@@ -141,6 +151,11 @@ function readItem(value: unknown): DeskItem | null {
   const size =
     mode === 'panel' || !definition
       ? { width: value.width, height: value.height }
+      : mode === 'card'
+        ? {
+            width: Math.max(minimumItemSize({ kind, mode }).width, value.width),
+            height: Math.max(minimumItemSize({ kind, mode }).height, value.height),
+          }
       : definition.sizes[mode];
 
   return {

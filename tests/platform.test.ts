@@ -218,3 +218,26 @@ test('layout survives pluginization, keeps missing plugin slots and never stores
     else Reflect.deleteProperty(globalThis, 'localStorage');
   }
 });
+
+test('resized cards retain per-instance dimensions and position after saving and loading', () => {
+  const before = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { value: new MemoryStorage(), configurable: true });
+  try {
+    const cards = pluginRegistry.list.map(({ manifest }) => ({
+      ...createItem(manifest.id, 'card', []), width: 410, height: 225, x: .27, y: .35,
+    }));
+    const duplicate = { ...cards[0], id: 'second-note-card', width: 285, height: 145 };
+    assert.equal(saveWorkspace([...cards, duplicate]), true);
+    assert.deepEqual(loadWorkspace(), { items: [...cards, duplicate], warning: null });
+    assert.deepEqual(setItemMode(cards[0], 'card'), cards[0]);
+    assert.equal(setItemMode(cards[0], 'icon').width, 112);
+    // Corrupt tiny sizes are repaired without removing an otherwise valid card.
+    assert.equal(saveWorkspace([{ ...cards[0], width: 1, height: 1 }]), true);
+    const repaired = loadWorkspace().items[0];
+    assert.equal(repaired.width, 260);
+    assert.equal(repaired.height, 120);
+  } finally {
+    if (before) Object.defineProperty(globalThis, 'localStorage', before);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
+  }
+});
