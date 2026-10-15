@@ -1,6 +1,8 @@
 # 私人云端配置
 
-本轮提供可重复执行的数据库迁移、客户端接入协议与本地 SQL 回归；这些文件本身不代表 Supabase 项目已经创建或部署。正式配置使用用户自己的 Supabase Free 项目，地区选择 Singapore；账号、项目和公开访问地址由主任务通过已连接的服务配置。不要为本步骤升级套餐或启用收费附加服务。
+正式环境使用 Azhertayus 组织下的 Supabase Free 项目“人生云端”，地区为 Singapore（`ap-southeast-1`），项目标识为 `caqfzdzkcubsooatizzm`。`private_sync_v1` 已部署，唯一私人账号已预置；公开注册与匿名登录均关闭。GitHub Pages 通过仓库 Actions variables 注入项目 URL 和现代 publishable key。不要为本步骤升级套餐或启用收费附加服务。
+
+部署时已检查实际数据库的迁移、RLS、函数权限与固定 `search_path`，并通过真实匿名 HTTP 请求验证记录读写和同步 RPC 都被拒绝。真实私人账号的登录、往返同步及 iPhone 实机验收需另行确认，不能由匿名检查或本地 SQL 回归推断。
 
 ## 1. 预置唯一账号
 
