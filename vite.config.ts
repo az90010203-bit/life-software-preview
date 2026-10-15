@@ -1,6 +1,7 @@
 import { isIP } from 'node:net';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { observatoryPwa } from './src/pwa/build';
 
 function readAdditionalHost(value: string | undefined): string | undefined {
   const hostname = value?.trim().toLowerCase();
@@ -96,7 +97,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: isPages ? readPagesBase(process.env.PAGES_BASE_PATH ?? env.PAGES_BASE_PATH) : '/',
-    plugins: [react(), healthEndpoint(additionalHost), ...(isPages ? [pagesPreviewStatus()] : [])],
+    plugins: [react(), healthEndpoint(additionalHost), observatoryPwa(), ...(isPages ? [pagesPreviewStatus()] : [])],
     server: {
       host: '127.0.0.1',
       port: 4317,

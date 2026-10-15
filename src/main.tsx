@@ -2,6 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import WorkspacePrototype from './WorkspacePrototype';
 import './styles.css';
+import { registerPwa } from './pwa/client';
+
+registerPwa();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1,5 +1,7 @@
 import { validDateKey } from '../platform/dates';
 import { readLegacyBatches } from './migration';
+import type { SyncLocalPort, ApplyResult, PullResult } from './sync-types';
+import { syncStores, captureSyncEntities, queueSyncDiff, bindSyncAccount, localSyncState, pendingSyncOperations, acceptSyncRemote, acknowledgeSyncOperation, resolveSyncConflict } from './sync-local';
 import {
   DataError,
   type DataSnapshot,
@@ -12,9 +14,10 @@ import {
   type TaskService,
   type DraftRecord,
   type DayNoteRecord,
+  type RecoverableDraft,
 } from './types';
 
-const stores = ['notes', 'tasks', 'dayFocus', 'dayNotes', 'drafts', 'meta'];
+const stores = ['notes', 'tasks', 'dayFocus', 'dayNotes', 'drafts', 'meta', ...syncStores];
 type FocusRow = { day: string; ids: string[] };
 type MetaRow = { key: string; warning?: string; status?: string };
 const uid = () =>
@@ -63,7 +66,7 @@ export type ServiceOptions = {
   scope?: string;
   broadcast?: boolean;
 };
-export class LocalTaskService implements TaskService {
+export class LocalTaskService implements TaskService, SyncLocalPort {
   private db?: IDBDatabase;
   private loading?: Promise<void>;
   private listeners = new Set<() => void>();
@@ -130,19 +133,21 @@ export class LocalTaskService implements TaskService {
     await this.claimScope();
     const factory = this.options.factory ?? globalThis.indexedDB;
     if (!factory) throw new Error('IndexedDB unavailable');
-    const opening = factory.open(this.options.name ?? 'life-preview-data', 1);
+    const opening = factory.open(this.options.name ?? 'life-preview-data', 2);
     opening.onupgradeneeded = () => {
-      for (const name of stores)
+      for (const name of stores) {
+        if (opening.result.objectStoreNames.contains(name)) continue;
         opening.result.createObjectStore(name, {
           keyPath:
             name === 'dayFocus'
               ? 'day'
               : name === 'dayNotes'
                 ? 'date'
-                : name === 'drafts' || name === 'meta'
+                : name === 'drafts' || name === 'meta' || name === 'syncEntities'
                   ? 'key'
                   : 'id',
         });
+      }
     };
     this.db = await new Promise<IDBDatabase>((resolve, reject) => {
       opening.onsuccess = () => resolve(opening.result);
@@ -319,10 +324,16 @@ export class LocalTaskService implements TaskService {
   }
   private async mutate<T>(
     work: (tx: IDBTransaction) => Promise<T>,
+    synchronize = true,
   ): Promise<T> {
     await this.initialize();
     try {
-      const result = await this.transaction(work);
+      const result = await this.transaction(async tx => {
+        const before = synchronize ? await captureSyncEntities(tx) : null;
+        const value = await work(tx);
+        if (before) await queueSyncDiff(tx, before);
+        return value;
+      });
       // The transaction has committed. A read/notification failure must never
       // turn a successful save into a retry that could create a second record.
       try {
@@ -355,6 +366,29 @@ export class LocalTaskService implements TaskService {
       );
     }
   }
+  bindAccount = (owner: string) => this.mutate(tx => bindSyncAccount(tx, owner), false);
+  getSyncState = async () => {
+    await this.initialize();
+    return this.transaction(tx => localSyncState(tx), 'readonly');
+  };
+  getPendingOperations = async () => {
+    await this.initialize();
+    return this.transaction(tx => pendingSyncOperations(tx), 'readonly');
+  };
+  acceptRemote = (result: PullResult) => this.mutate(tx => acceptSyncRemote(tx, result), false);
+  acknowledgeOperation = (id: string, result: ApplyResult) => this.mutate(tx => acknowledgeSyncOperation(tx, id, result), false);
+  resolveConflict = (id: string, resolution: 'remote' | 'copy') => this.mutate(tx => resolveSyncConflict(tx, id, resolution), false);
+  getImportCounts = () => ({
+    notes: this.snapshot.notes.length,
+    tasks: this.snapshot.tasks.length,
+    dayNotes: this.snapshot.dayNotes.length,
+    focus: Object.keys(this.snapshot.focus).length,
+  });
+  flushPendingWrites = async () => {
+    await this.initialize();
+    await this.transaction(async tx => { await request(tx.objectStore('meta').get('sync:state')); });
+    if (this.volatile.size) throw new DataError('storage', '有草稿尚未写入本机，请保留页面或导出后再更新。');
+  };
   private async task(tx: IDBTransaction, id: string) {
     const task = await request<TaskRecord | undefined>(
       tx.objectStore('tasks').get(id),
@@ -688,6 +722,75 @@ export class LocalTaskService implements TaskService {
       drafts: this.snapshot.drafts.filter((draft) => draft.key !== key),
     });
   };
+  listRecoverableDrafts = async (): Promise<RecoverableDraft[]> => {
+    await this.initialize();
+    return this.transaction(async tx => {
+      const all = await request<DraftRecord[]>(tx.objectStore('drafts').getAll());
+      const result: RecoverableDraft[] = [];
+      for (const draft of all) {
+        const separator = draft.key.lastIndexOf('::');
+        if (separator < 0 || draft.key.slice(separator + 2) === this.scope || !draft.text.trim()) continue;
+        const originalKey = draft.key.slice(0, separator);
+        // Opening an editor retains a safety draft before any typing. Avoid
+        // presenting unchanged saved content or blank task scaffolding as loss.
+        if (originalKey.startsWith('notes:edit:')) {
+          const note = await request<NoteRecord | undefined>(tx.objectStore('notes').get(originalKey.slice('notes:edit:'.length)));
+          if (note?.text === draft.text) continue;
+        }
+        if (originalKey.startsWith('calendar.day-note:')) {
+          const note = await request<DayNoteRecord | undefined>(tx.objectStore('dayNotes').get(originalKey.slice('calendar.day-note:'.length)));
+          if (note?.text === draft.text) continue;
+        }
+        if (originalKey.startsWith('task:')) {
+          let fields: Record<string, unknown> | undefined;
+          try { const parsed: unknown = JSON.parse(draft.text); if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) fields = parsed as Record<string, unknown>; } catch { /* Unfamiliar text remains recoverable. */ }
+          if (fields && typeof fields.title === 'string') {
+            if (!fields.title.trim() && !String(fields.details ?? '').trim() && !String(fields.time ?? '').trim()) continue;
+            if (originalKey.startsWith('task:edit:')) {
+              const task = await request<TaskRecord | undefined>(tx.objectStore('tasks').get(originalKey.slice('task:edit:'.length)));
+              if (task && fields.title === task.title && fields.date === task.date && (fields.time ?? '') === (task.time ?? '') && (fields.details ?? '') === (task.details ?? '')) continue;
+            }
+          }
+        }
+        const receipt = await request<{ text: string; updatedAt: string } | undefined>(tx.objectStore('meta').get('draft-recovery:' + draft.key));
+        if (receipt?.text === draft.text && receipt.updatedAt === draft.updatedAt) continue;
+        result.push({ id: draft.key, key: originalKey, text: draft.text, updatedAt: draft.updatedAt });
+      }
+      return result.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt) || a.id.localeCompare(b.id));
+    }, 'readonly');
+  };
+  recoverDraft = (id: string, expected?: Pick<RecoverableDraft, 'text' | 'updatedAt'>): Promise<NoteRecord> => this.mutate(async tx => {
+    const separator = id.lastIndexOf('::');
+    if (separator < 0 || id.slice(separator + 2) === this.scope) throw new DataError('invalid', '当前窗口的草稿已在原位置保留，无需覆盖。');
+    const draft = await request<DraftRecord | undefined>(tx.objectStore('drafts').get(id));
+    if (!draft?.text.trim()) throw new DataError('conflict', '这份草稿已被原窗口收好或清空，请重新查看。');
+    if (expected && (expected.text !== draft.text || expected.updatedAt !== draft.updatedAt)) throw new DataError('conflict', '原窗口刚刚修改了这份草稿，请重新查看后再找回。');
+    const marker = 'draft-recovery:' + id;
+    const receipt = await request<{ text: string; updatedAt: string; noteId: string } | undefined>(tx.objectStore('meta').get(marker));
+    if (receipt?.text === draft.text && receipt.updatedAt === draft.updatedAt) {
+      const existing = await request<NoteRecord | undefined>(tx.objectStore('notes').get(receipt.noteId));
+      if (existing) return existing;
+      throw new DataError('conflict', '这份草稿已经恢复过，请先在片段和最近删除中查看。');
+    }
+    let text = draft.text;
+    if (id.startsWith('task:')) {
+      try {
+        const fields: unknown = JSON.parse(text);
+        if (fields && typeof fields === 'object' && 'title' in fields && typeof fields.title === 'string') {
+          const value = fields as Record<string, unknown>;
+          text = [fields.title, typeof value.date === 'string' ? `日期：${value.date}` : '', typeof value.time === 'string' && value.time ? `时间：${value.time}` : '', typeof value.details === 'string' ? value.details : ''].filter(Boolean).join('\n');
+          if (!text.trim()) text = draft.text;
+        }
+      } catch { /* An unfamiliar draft remains readable as its original text. */ }
+    }
+    const timestamp = now();
+    const note: NoteRecord = { id: uid(), text, createdAt: timestamp, updatedAt: timestamp, revision: 1 };
+    tx.objectStore('notes').add(note);
+    tx.objectStore('meta').put({ key: marker, text: draft.text, updatedAt: draft.updatedAt, noteId: note.id });
+    // The source can belong to an active window. Keep it untouched; this receipt
+    // marks only this exact version as recovered and prevents duplicate copies.
+    return note;
+  });
   exportData = async () => {
     await this.initialize();
     let data: Record<string, unknown> = { ...this.snapshot };

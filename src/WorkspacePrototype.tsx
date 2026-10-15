@@ -11,6 +11,11 @@ import Icon from './components/Icons';
 import SceneBackground from './components/SceneBackground';
 import SceneControls from './scene/SceneControls';
 import { DataProvider } from './data/react';
+import { useData } from './data/react';
+import { CloudProvider, useCloud } from './cloud/react';
+import AccountPanel, { cloudLabel } from './cloud/AccountPanel';
+import MobileWorkspace from './mobile/MobileWorkspace';
+import { registerPwaUpdateGuard } from './pwa/client';
 import { PluginNavigationProvider, type PluginTarget, type PluginDestination } from './platform/navigation';
 import { useScenePreferences } from './scene/useScene';
 import {
@@ -746,10 +751,27 @@ function WorkspaceDesk() {
     </PluginNavigationProvider>
   );
 }
+function Application() {
+  const mobileQuery = '(max-width: 799px), (pointer: coarse) and (max-width: 1100px)';
+  const [mobile, setMobile] = useState(() => window.matchMedia(mobileQuery).matches);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const { state } = useCloud();
+  const { service } = useData();
+  useEffect(() => {
+    const media = window.matchMedia(mobileQuery);
+    const update = () => setMobile(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  useEffect(() => registerPwaUpdateGuard(() => service.flushPendingWrites()), [service]);
+  if (!state.canUse) return <main className="cloud-gate"><AccountPanel /></main>;
+  if (mobile) return <MobileWorkspace syncStatus={cloudLabel(state)} settings={<AccountPanel />} />;
+  return <><WorkspaceDesk /><button className="cloud-desktop-trigger" type="button" aria-expanded={accountOpen} onClick={() => setAccountOpen(!accountOpen)}><Icon name="orbit" size={16}/><span>{cloudLabel(state)}</span></button>{accountOpen && <aside className="cloud-account-window" aria-label="账号与同步设置"><button className="cloud-account-close" onClick={() => setAccountOpen(false)}>关闭</button><AccountPanel /></aside>}</>;
+}
 export default function WorkspacePrototype() {
   return (
-    <DataProvider><PluginProviders>
-      <WorkspaceDesk />
-    </PluginProviders></DataProvider>
+    <DataProvider><CloudProvider><PluginProviders>
+      <Application />
+    </PluginProviders></CloudProvider></DataProvider>
   );
 }

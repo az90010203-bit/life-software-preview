@@ -1,3 +1,5 @@
+import type { SyncLocalPort } from './sync-types';
+
 export type NoteRecord = {
   id: string;
   text: string;
@@ -24,6 +26,12 @@ export type DraftRecord = {
   key: string;
   text: string;
   baseRevision?: number;
+  updatedAt: string;
+};
+export type RecoverableDraft = {
+  id: string;
+  key: string;
+  text: string;
   updatedAt: string;
 };
 export type DataSnapshot = {
@@ -58,7 +66,7 @@ export class DataError extends Error {
     super(message);
   }
 }
-export interface TaskService {
+export interface TaskService extends SyncLocalPort {
   getSnapshot(): DataSnapshot;
   subscribe(listener: () => void): () => void;
   initialize(): Promise<void>;
@@ -95,5 +103,8 @@ export interface TaskService {
   ): Promise<void>;
   saveDraft(key: string, text: string, baseRevision?: number): Promise<void>;
   clearDraft(key: string): Promise<void>;
+  listRecoverableDrafts(): Promise<RecoverableDraft[]>;
+  recoverDraft(id: string, expected?: Pick<RecoverableDraft, 'text' | 'updatedAt'>): Promise<NoteRecord>;
   exportData(): Promise<string>;
+  flushPendingWrites(): Promise<void>;
 }

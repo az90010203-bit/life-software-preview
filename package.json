@@ -1,20 +1,22 @@
 {
   "name": "life-software-preview",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "test": "vite build --ssr tests/platform.test.ts --outDir output/plugin-tests && node --test output/plugin-tests/platform.test.js && vite build --ssr tests/scene.test.ts --outDir output/scene-tests && node --test output/scene-tests/scene.test.js && vite build --ssr tests/data.test.ts --outDir output/data-tests && node --test output/data-tests/data.test.js && vite build --ssr tests/notes.test.ts --outDir output/notes-tests && node --test output/notes-tests/notes.test.js",
+    "test": "node scripts/test.mjs",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",
     "build:pages": "npm run typecheck && vite build --mode github-pages"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.10",
     "@types/node": "26.6.5",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
