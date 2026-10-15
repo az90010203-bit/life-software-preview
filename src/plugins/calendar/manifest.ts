@@ -9,7 +9,7 @@ export const manifest: PluginManifest = {
   sizes: {
     icon: { width: 112, height: 112 },
     card: { width: 340, height: 240 },
-    panel: { width: 640, height: 520 },
+    panel: { width: 500, height: 420 },
   },
   minPanel: { width: 500, height: 420 },
 };

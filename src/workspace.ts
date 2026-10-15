@@ -203,6 +203,16 @@ export function loadWorkspace(): WorkspaceLoad {
     ids.add(item.id);
     items.push(item);
   }
+  // Upgrade only the untouched original starter layout; custom arrangements stay intact.
+  const savedItems: unknown[] = saved.items;
+  const starter = [
+    { kind: 'notes', mode: 'panel', x: 0.98, y: 0.08, width: 440, height: 510 },
+    { kind: 'calendar', mode: 'icon', x: 0.45, y: 0.01, width: 112, height: 112 },
+    { kind: 'today', mode: 'card', x: 0.02, y: 0.82, width: 340, height: 156 },
+  ];
+  if (savedItems.length === starter.length && starter.every((old) =>
+    savedItems.some((item) => typeof item === 'object' && item !== null && Object.entries(old).every(([key, value]) => (item as Record<string, unknown>)[key] === value))
+  )) return { items: defaultItems(), warning: null };
   return { items, warning: repaired ? '部分布局记录已修复或忽略。' : null };
 }
 

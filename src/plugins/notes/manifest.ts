@@ -9,7 +9,7 @@ export const manifest: PluginManifest = {
   sizes: {
     icon: { width: 112, height: 112 },
     card: { width: 340, height: 178 },
-    panel: { width: 440, height: 510 },
+    panel: { width: 680, height: 680 },
   },
   minPanel: { width: 360, height: 380 },
   quickAction: { label: '记一下', icon: 'plus', mode: 'panel' },

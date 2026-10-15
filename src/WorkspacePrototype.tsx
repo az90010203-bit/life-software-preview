@@ -12,7 +12,6 @@ import SceneBackground, { useSceneMotion } from './components/SceneBackground';
 import {
   PluginProviders,
   PluginView,
-  PluginStatuses,
 } from './platform/PluginHost';
 import { pluginRegistry, primaryPluginId } from './plugins';
 import {
@@ -76,16 +75,14 @@ function WorkspaceDesk() {
     mode: 'panel' as const,
   };
   const sceneMotion = useSceneMotion();
-  const selected = items.find((i) => i.id === activeId);
-  const topTitle = editing
-    ? '布置空间'
-    : selected
-      ? pluginRegistry.describe(selected.kind).title
-      : '我的空间';
+  // Store panel dimensions in desktop design units, so a smaller viewport
+  // preserves breathing room without changing the user's saved arrangement.
+  const widthScale = Math.min(1, canvas.width / 1220);
+  const heightScale = Math.min(1, canvas.height / 680);
   const today = new Intl.DateTimeFormat('zh-CN', {
     timeZone: 'Asia/Tokyo',
-    month: '2-digit',
-    day: '2-digit',
+    month: 'long',
+    day: 'numeric',
     weekday: 'long',
   }).format(new Date());
   useEffect(() => {
@@ -125,8 +122,8 @@ function WorkspaceDesk() {
     return () => window.clearTimeout(timer);
   }, [toast]);
   function getBox(item: DeskItem): Box {
-    const width = Math.min(item.width, Math.max(1, canvas.width)),
-      height = Math.min(item.height, Math.max(1, canvas.height));
+    const width = Math.min(item.width * widthScale, Math.max(1, canvas.width)),
+      height = Math.min(item.height * heightScale, Math.max(1, canvas.height));
     return {
       x: item.x * Math.max(0, canvas.width - width),
       y: item.y * Math.max(0, canvas.height - height),
@@ -237,11 +234,11 @@ function WorkspaceDesk() {
         ...current.box,
         width: Math.min(
           canvas.width - current.box.x,
-          Math.max(min.width, current.box.width + dx),
+          Math.max(min.width * widthScale, current.box.width + dx),
         ),
         height: Math.min(
           canvas.height - current.box.y,
-          Math.max(min.height, current.box.height + dy),
+          Math.max(min.height * heightScale, current.box.height + dy),
         ),
       };
       setGuides({});
@@ -263,11 +260,11 @@ function WorkspaceDesk() {
                 ? {
                     width: Math.max(
                       pluginRegistry.describe(i.kind).minPanel.width,
-                      box.width,
+                      box.width / widthScale,
                     ),
                     height: Math.max(
                       pluginRegistry.describe(i.kind).minPanel.height,
-                      box.height,
+                      box.height / heightScale,
                     ),
                   }
                 : {}),
@@ -389,6 +386,7 @@ function WorkspaceDesk() {
   }, [editing]);
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
+      if (event.defaultPrevented) return;
       if (event.key === 'Escape') {
         if (gesture.current) {
           cancelGesture();
@@ -417,15 +415,6 @@ function WorkspaceDesk() {
         </div>
         <div className="header-actions">
           <button
-            className="preview-tag"
-            aria-label="查看预览说明"
-            title="预览说明"
-            onClick={() => setAbout(!about)}
-          >
-            <span className="preview-tag-label">交互预览</span>
-            <Icon name="info" size={19} className="preview-tag-icon" />
-          </button>
-          <button
             className="round-control scene-motion-control"
             aria-label={
               sceneMotion.reduced
@@ -448,30 +437,20 @@ function WorkspaceDesk() {
             <Icon name={sceneMotion.animated ? 'pause' : 'play'} size={20} />
           </button>
           <button
-            className={'round-control ' + (library ? 'is-active' : '')}
-            aria-label="打开组件库"
-            title="组件库"
-            onClick={() => setLibrary(!library)}
-          >
-            <Icon name="add" />
-          </button>
-          <button
-            className={'round-control ' + (editing ? 'is-active' : '')}
+            className={'arrange-control ' + (editing ? 'is-active' : '')}
             aria-label={editing ? '完成布置' : '布置空间'}
-            title={editing ? '完成布置' : '布置空间'}
+            aria-pressed={editing}
             onClick={() => setEditing(!editing)}
           >
-            <Icon name="settings" />
+            {editing ? '完成布置' : '布置空间'}
+          </button>
+          <button className="round-control" aria-label="空间说明" title="空间说明" onClick={() => setAbout(!about)}>
+            <Icon name="info" size={20} />
           </button>
         </div>
       </header>
-      <div className="workspace-heading">
-        <div className="workspace-index latin">
-          {editing ? 'ARRANGE YOUR SPACE' : 'MY OBSERVATORY'}
-        </div>
-        <h1>{topTitle}</h1>
-        <p>{editing ? '拖动标题栏，靠近时自动吸附。' : today}</p>
-      </div>
+      <div className="workspace-date">{today}</div>
+      {editing && <p className="arrange-hint">拖动标题栏移动 · 右下角调整大小 · 菜单切换显示方式</p>}
       <main
         className="desk-workspace"
         ref={canvasRef}
@@ -713,38 +692,32 @@ function WorkspaceDesk() {
           )}
         </div>
       )}
-      <footer className="workspace-footer">
-        <span>
-          我的观景室<span className="footer-count">{items.length} 个组件</span>
-        </span>
-        <span>{saved ? '布局已保存到此浏览器' : '正在保存布局…'}</span>
-      </footer>
-      <div className="operation-dock">
-        <div className="dock-side">
-          <button
-            onClick={() => setLibrary(!library)}
-            className={library ? 'active' : ''}
-          >
-            <Icon name="add" size={20} />
-            <span>组件库</span>
-          </button>
-          <i />
-          <button
-            onClick={() => setEditing(!editing)}
-            className={editing ? 'active' : ''}
-          >
-            <Icon name={editing ? 'check' : 'move'} size={20} />
-            <span>{editing ? '完成布置' : '布置空间'}</span>
-          </button>
-        </div>
-        <button className="dock-primary" onClick={openPrimaryPlugin}>
-          <Icon name={primaryAction.icon} size={26} />
-          {primaryAction.label}
+      {editing && (
+        <footer className="workspace-footer" role="status">
+          <span>布置你的空间</span>
+          <span>{saved ? '布局已保存' : '正在保存…'}</span>
+        </footer>
+      )}
+      <nav className="operation-dock" aria-label="空间快捷操作">
+        <button className="dock-action" onClick={openPrimaryPlugin}>
+          <Icon name={pluginRegistry.describe(primaryPluginId).icon} size={23} />
+          <span>{pluginRegistry.describe(primaryPluginId).title}</span>
         </button>
-        <div className="dock-side dock-summary">
-          <PluginStatuses />
-        </div>
-      </div>
+        <button className="dock-action" onClick={() => {
+          const calendar = items.find((item) => item.kind === 'calendar');
+          if (calendar) {
+            setLibrary(false);
+            changeMode(calendar.id, 'panel');
+          } else add('calendar', 'panel');
+        }}>
+          <Icon name="calendar" size={23} />
+          <span>月历</span>
+        </button>
+        <button className={'dock-action ' + (library ? 'active' : '')} aria-label="打开组件库" aria-expanded={library} onClick={() => setLibrary(!library)}>
+          <Icon name="plus" size={23} />
+          <span>添加组件</span>
+        </button>
+      </nav>
     </div>
   );
 }
