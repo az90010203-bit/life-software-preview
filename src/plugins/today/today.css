@@ -1,0 +1,418 @@
+.today-plugin {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+  min-height: 0;
+  overflow-wrap: anywhere;
+}
+.today-plugin--panel {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 2px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #b4c2ca transparent;
+}
+.today-plugin--card {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  gap: 5px;
+}
+.today-plugin-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.today-plugin-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #5b7381;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+.today-plugin-count {
+  display: inline-flex;
+  align-items: baseline;
+  color: #a38d60;
+  font-size: 17px;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.today-plugin-count small {
+  color: #93a2a9;
+  font-size: 10px;
+}
+.today-plugin-date {
+  color: #8295a0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.07em;
+}
+.today-plugin-caption {
+  color: #8999a0;
+  font-size: 11px;
+  margin: 0 0 3px;
+  line-height: 1.6;
+}
+.today-priorities {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.today-priority {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 1px solid #ffffffdf;
+  border-radius: 18px;
+  background: linear-gradient(115deg, #ffffffbc, #edf2f693);
+  padding: 7px;
+  box-shadow: inset 0 0 0 1px #dce5e93b;
+}
+.today-priority-check {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.today-priority-check input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  inset: 0;
+  cursor: pointer;
+}
+.today-priority-check > span {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  border: 1px solid #cbd7df;
+  background: #f8fafbd9;
+  color: #8d9da7;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  transition: background 0.18s;
+}
+.today-priority-check input:focus-visible + span {
+  outline: 2px solid #a18b5c;
+  outline-offset: 3px;
+}
+.today-priority-check input:disabled + span {
+  opacity: 0.5;
+}
+.today-priority-check input:checked + span {
+  background: #b1a078;
+  border-color: #b1a078;
+  color: #fff;
+}
+.today-priority-title {
+  flex: 1 1 100px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  color: #3f5b6e;
+  text-align: left;
+  background: none;
+  padding: 3px 0;
+  line-height: 1.65;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  border-radius: 8px;
+}
+.today-priority-title > span {
+  max-width: 100%;
+  white-space: pre-wrap;
+}
+.today-priority-title time {
+  font-size: 10px;
+  color: #879aa5;
+}
+.today-priority.is-completed .today-priority-title > span {
+  text-decoration: line-through;
+  text-decoration-color: #a7b4bb;
+  color: #8c9aa3;
+}
+.today-priority-menu {
+  flex: 0 0 30px;
+  font-size: 11px;
+}
+.today-priority-menu[open] {
+  flex-basis: 100%;
+  padding-left: 38px;
+}
+.today-priority-menu summary {
+  color: #8b9ba4;
+  cursor: pointer;
+  list-style: none;
+  width: 30px;
+  min-height: 30px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border-radius: 999px;
+}
+.today-priority-menu summary::-webkit-details-marker {
+  display: none;
+}
+.today-priority-menu > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-top: 4px;
+}
+.today-priority-menu button {
+  border: 0;
+  background: #e5edf1;
+  color: #607b8b;
+  padding: 7px 10px;
+  border-radius: 999px;
+  min-height: 32px;
+  font-size: 11px;
+}
+.today-plugin-add-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.today-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #e7e1d3;
+  color: #8c784d;
+  padding: 9px 14px;
+  font-size: 12px;
+  min-height: 36px;
+}
+.today-choose {
+  background: none;
+  border-radius: 999px;
+  color: #728b99;
+  padding: 8px 6px;
+  font-size: 11px;
+  min-height: 36px;
+}
+.today-plugin-empty {
+  color: #8b9ca5;
+  line-height: 1.8;
+  font-size: 12px;
+  margin: 5px 0;
+  padding: 8px 3px;
+}
+.today-plugin--card .today-priorities {
+  gap: 3px;
+}
+.today-plugin--card .today-priority {
+  padding: 1px 5px;
+  gap: 6px;
+  border-radius: 13px;
+}
+.today-plugin--card .today-priority-title {
+  font-size: 12px;
+  flex-basis: 0;
+}
+.today-plugin--card .today-priority-title > span {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.today-plugin--card .today-priority-check {
+  width: 26px;
+  height: 26px;
+  flex-basis: 26px;
+}
+.today-plugin--card .today-priority-check > span {
+  width: 22px;
+  height: 22px;
+}
+.today-plugin--card .today-add {
+  padding: 5px 10px;
+  min-height: 29px;
+  font-size: 10px;
+}
+.today-plugin-secondary {
+  margin-top: 8px;
+  border-top: 1px solid #cbd8df69;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.today-history > summary,
+.today-data-tools > summary {
+  color: #8295a0;
+  font-size: 11px;
+  padding: 9px 2px;
+  cursor: pointer;
+}
+.today-history > summary span {
+  display: inline-block;
+  margin-left: 8px;
+  min-width: 18px;
+  text-align: center;
+  border-radius: 999px;
+  color: #9a895f;
+  background: #e9e4d8;
+  font-size: 10px;
+}
+.today-history-hint {
+  margin: 0 0 7px;
+  color: #91a0a7;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.today-picker {
+  border-radius: 20px;
+  background: #e9eff389;
+  padding: 11px;
+  margin-top: 3px;
+}
+.today-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffffc9;
+  border: 1px solid #ffffff;
+  border-radius: 999px;
+  padding: 9px 11px;
+  color: #8a9ca6;
+}
+.today-search input {
+  min-width: 0;
+  width: 100%;
+  background: none;
+  border: 0;
+  color: #425d6e;
+  font-size: 12px;
+  outline-offset: 5px;
+}
+.today-other-days {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7f929c;
+  font-size: 11px;
+  margin: 12px 2px;
+}
+.today-other-days input {
+  accent-color: #a18c5c;
+}
+.today-candidates {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.today-candidates button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  border-radius: 13px;
+  background: #ffffffb3;
+  color: #567080;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.today-candidates button > span:first-child {
+  flex: 1 1 100%;
+  overflow-wrap: anywhere;
+}
+.today-candidates time {
+  color: #92a0a7;
+  font-size: 10px;
+  flex: 1 1 auto;
+}
+.today-carry-label {
+  font-size: 10px;
+  color: #a18a58;
+}
+.today-plugin-editor {
+  min-width: 0;
+}
+.today-plugin-status {
+  color: #7e957c;
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 3px 0;
+}
+.today-plugin-error {
+  padding: 9px 11px;
+  color: #99664f;
+  background: #fff8edca;
+  border-radius: 13px;
+  font-size: 11px;
+  line-height: 1.75;
+  margin: 3px 0;
+  overflow-wrap: anywhere;
+}
+.today-plugin button:hover:not(:disabled) {
+  filter: brightness(0.98);
+}
+.today-plugin button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.today-plugin button:focus-visible,
+.today-plugin summary:focus-visible {
+  outline: 2px solid #a38e60;
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .today-priority-check {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+  .today-priority-menu {
+    flex-basis: 44px;
+  }
+  .today-priority-menu summary {
+    width: 44px;
+    min-height: 44px;
+  }
+  .today-plugin button,
+  .today-priority-menu button,
+  .today-plugin--card .today-add {
+    min-height: 44px;
+  }
+  .today-plugin--card .today-priority-check {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .today-priority-check > span {
+    transition: none;
+  }
+}

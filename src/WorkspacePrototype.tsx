@@ -10,6 +10,8 @@ import {
 import Icon from './components/Icons';
 import SceneBackground from './components/SceneBackground';
 import SceneControls from './scene/SceneControls';
+import { DataProvider } from './data/react';
+import { PluginNavigationProvider, type PluginTarget, type PluginDestination } from './platform/navigation';
 import { useScenePreferences } from './scene/useScene';
 import {
   PluginProviders,
@@ -71,12 +73,7 @@ function WorkspaceDesk() {
   const gesture = useRef<Gesture | null>(null);
   const focusWidgetId = useRef<string | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
-  const primaryAction = pluginRegistry.describe(primaryPluginId)
-    .quickAction ?? {
-    label: '添加组件',
-    icon: 'plus' as const,
-    mode: 'panel' as const,
-  };
+  const [pluginTarget, setPluginTarget] = useState<PluginTarget | null>(null);
   const scene = useScenePreferences();
   const [sceneOpen, setSceneOpen] = useState(false);
   const sceneButton = useRef<HTMLButtonElement>(null);
@@ -101,7 +98,6 @@ function WorkspaceDesk() {
   const widthScale = Math.min(1, canvas.width / 1220);
   const heightScale = Math.min(1, canvas.height / 680);
   const today = new Intl.DateTimeFormat('zh-CN', {
-    timeZone: 'Asia/Tokyo',
     month: 'long',
     day: 'numeric',
     weekday: 'long',
@@ -358,28 +354,46 @@ function WorkspaceDesk() {
       ),
     );
   }
-  function openPrimaryPlugin() {
-    if (!primaryPluginId) {
+  function openPlugin(
+    pluginId: string,
+    target?: PluginDestination,
+    mode: WidgetMode = 'panel',
+  ) {
+    if (!pluginRegistry.find(pluginId)) {
       setLibrary(true);
       return;
     }
     setLibrary(false);
     setEditing(false);
     const targetInstance =
-      items.find((i) => i.id === activeId && i.kind === primaryPluginId) ??
-      items.find((i) => i.kind === primaryPluginId);
+      items.find((i) => i.id === activeId && i.kind === pluginId) ??
+      items.find((i) => i.kind === pluginId);
     if (targetInstance) {
       focusWidgetId.current = targetInstance.id;
-      if (targetInstance.mode === primaryAction.mode)
-        activate(targetInstance.id);
-      else changeMode(targetInstance.id, primaryAction.mode);
+      if (targetInstance.mode === mode) activate(targetInstance.id);
+      else changeMode(targetInstance.id, mode);
     } else {
-      const item = createItem(primaryPluginId, primaryAction.mode, items);
+      const item = createItem(pluginId, mode, items);
       focusWidgetId.current = item.id;
-      setItems((current) => [...current, item]);
+      setItems((current) => [
+        ...current,
+        { ...item, z: Math.max(0, ...current.map((i) => i.z)) + 1 },
+      ]);
       setActiveId(item.id);
     }
+    setPluginTarget((previous) => ({
+      ...target,
+      pluginId,
+      requestId: (previous?.requestId ?? 0) + 1,
+    }));
     setFocusRequest((current) => current + 1);
+  }
+  function openPrimaryPlugin() {
+    openPlugin(
+      primaryPluginId,
+      { action: 'add' },
+      pluginRegistry.describe(primaryPluginId).quickAction?.mode ?? 'panel',
+    );
   }
   function cancelGesture() {
     const current = gesture.current;
@@ -421,6 +435,7 @@ function WorkspaceDesk() {
     return () => window.removeEventListener('keydown', onKey);
   }, [library, about, editing]);
   return (
+    <PluginNavigationProvider value={{ target: pluginTarget, openPlugin }}>
     <div className={'observatory ' + (editing ? 'is-arranging' : '')} data-scene-phase={scene.phase}>
       <SceneBackground
         settings={scene.settings}
@@ -718,13 +733,7 @@ function WorkspaceDesk() {
           <Icon name={pluginRegistry.describe(primaryPluginId).icon} size={23} />
           <span>{pluginRegistry.describe(primaryPluginId).title}</span>
         </button>
-        <button className="dock-action" onClick={() => {
-          const calendar = items.find((item) => item.kind === 'calendar');
-          if (calendar) {
-            setLibrary(false);
-            changeMode(calendar.id, 'panel');
-          } else add('calendar', 'panel');
-        }}>
+        <button className="dock-action" onClick={() => openPlugin('calendar')}>
           <Icon name="calendar" size={23} />
           <span>月历</span>
         </button>
@@ -734,12 +743,13 @@ function WorkspaceDesk() {
         </button>
       </nav>
     </div>
+    </PluginNavigationProvider>
   );
 }
 export default function WorkspacePrototype() {
   return (
-    <PluginProviders>
+    <DataProvider><PluginProviders>
       <WorkspaceDesk />
-    </PluginProviders>
+    </PluginProviders></DataProvider>
   );
 }

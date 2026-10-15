@@ -1,0 +1,129 @@
+.focus-picker {
+  padding: 16px;
+  margin: 10px 0;
+  border: 1px solid #fff;
+  border-radius: 23px;
+  background: linear-gradient(135deg, #fffdf7f5, #eaf1f6f5);
+  box-shadow:
+    0 6px 24px #304b6010,
+    inset 0 0 0 1px #dce4e65c;
+  color: #425d6e;
+  min-width: 0;
+  font-size: 13px;
+}
+.focus-picker-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.focus-picker-heading h3 {
+  font-size: 15px;
+  margin: 0;
+  font-weight: 550;
+}
+.focus-picker-heading p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: #748998;
+}
+.focus-picker-orbit {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #aa925e;
+  background: #f0e9d8;
+  font-size: 17px;
+}
+.focus-picker-task {
+  margin: 14px 0;
+  padding: 10px 12px;
+  border-radius: 15px;
+  background: #ffffffa8;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.focus-picker-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  line-height: 1.7;
+  padding: 9px 0;
+}
+.focus-picker-confirm input,
+.focus-picker-replacements input {
+  flex-shrink: 0;
+  margin: 5px 0 0;
+  accent-color: #9d8758;
+}
+.focus-picker-replacements {
+  border: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  min-width: 0;
+}
+.focus-picker-replacements legend {
+  color: #687e8b;
+  padding: 0 0 7px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.focus-picker-replacements label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border-radius: 13px;
+  background: #ffffffa0;
+  padding: 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.focus-picker-replacements p,
+.focus-picker-hint {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #728591;
+}
+.focus-picker-completed {
+  color: #8b9a9d;
+}
+.focus-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+}
+.focus-picker-cancel {
+  background: #e4ebef;
+  border: 1px solid #d9e2e7;
+  color: #617783;
+  border-radius: 999px;
+  padding: 10px 17px;
+  min-height: 40px;
+}
+.focus-picker-actions .wc-primary-action {
+  font-size: 12px;
+  min-height: 40px;
+}
+.focus-picker button:disabled {
+  opacity: 0.52;
+  cursor: default;
+}
+.focus-picker-error {
+  color: #995b48;
+  background: #fff5ec;
+  padding: 9px 11px;
+  border-radius: 12px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.focus-picker :focus-visible {
+  outline: 2px solid #9d8758;
+  outline-offset: 3px;
+}

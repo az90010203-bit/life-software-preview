@@ -2,7 +2,7 @@ import type { PluginManifest } from '../../platform/plugins';
 export const manifest: PluginManifest = {
   id: 'notes',
   apiVersion: 1,
-  version: '1.0.0',
+  version: '2.0.0',
   title: '随手记',
   description: '接住此刻的一个念头。',
   icon: 'notes',

@@ -1,0 +1,200 @@
+.pu-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f8fafbec, #e8eff4db);
+  border: 1px solid #ffffffc9;
+  border-radius: 22px;
+  box-shadow:
+    inset 0 1px #fff,
+    0 5px 20px #44627808;
+  min-width: 0;
+  flex-shrink: 0;
+}
+.pu-label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  font-size: 11px;
+  color: #6b7d88;
+  letter-spacing: 0.5px;
+}
+.pu-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #b3c5d14d;
+  border-radius: 13px;
+  padding: 10px 12px;
+  background: #ffffff9c;
+  color: #385365;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.pu-task-title {
+  font-size: 15px;
+}
+.pu-textarea {
+  resize: vertical;
+  min-height: 76px;
+  max-height: 220px;
+}
+.pu-extra {
+  display: grid;
+  gap: 10px;
+}
+.pu-extra > label:first-child {
+  max-width: 180px;
+}
+.pu-row {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+  flex-wrap: wrap;
+}
+.pu-row > label {
+  flex: 1;
+  min-width: 130px;
+}
+.pu-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pu-actions > .pu-hint {
+  flex: 1;
+  margin: 0;
+  min-width: 70px;
+}
+.pu-button,
+.pu-link {
+  border: 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.6;
+  padding: 7px 12px;
+  color: #526c7c;
+  background: #dde7ee99;
+  min-height: 32px;
+  cursor: pointer;
+}
+.pu-link {
+  background: transparent;
+  padding: 6px 8px;
+  color: #547184;
+}
+.pu-button:hover,
+.pu-link:hover {
+  background: #ccdae5aa;
+}
+.pu-button:disabled,
+.pu-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pu-hint {
+  font-size: 10px;
+  color: #788994;
+  line-height: 1.7;
+  margin: 0;
+}
+.pu-error {
+  font-size: 12px;
+  color: #965e48;
+  line-height: 1.7;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.pu-replace {
+  border: 1px solid #cab89466;
+  border-radius: 16px;
+  padding: 10px 12px;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.pu-replace legend {
+  font-size: 11px;
+  color: #8d7958;
+  max-width: 100%;
+}
+.pu-replace label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.pu-replace input {
+  accent-color: #71879a;
+  flex-shrink: 0;
+}
+.pu-data-tools {
+  font-size: 11px;
+  color: #6e8290;
+  margin-top: 12px;
+  flex-shrink: 0;
+}
+.pu-data-tools summary {
+  cursor: pointer;
+  padding: 7px 3px;
+  min-height: 30px;
+  box-sizing: border-box;
+}
+.pu-data-body {
+  border-radius: 16px;
+  background: #e7eef39c;
+  padding: 12px;
+  display: grid;
+  gap: 6px;
+}
+.pu-data-body > .pu-button {
+  justify-self: start;
+}
+.pu-deleted-list {
+  list-style: none;
+  padding: 0;
+  margin: 5px 0;
+  display: grid;
+  gap: 8px;
+  max-height: 180px;
+  overflow: auto;
+}
+.pu-deleted-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.pu-deleted-list li > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pu-editor :is(input, textarea, button):focus-visible,
+.pu-data-tools :is(button, summary):focus-visible {
+  outline: 2px solid #8aa7b8;
+  outline-offset: 3px;
+}
+@media (max-width: 799px) {
+  .pu-editor {
+    padding: 13px;
+    border-radius: 19px;
+  }
+  .pu-input {
+    font-size: 16px;
+  }
+  .pu-button,
+  .pu-link {
+    min-height: 38px;
+  }
+  .pu-replace label {
+    min-height: 36px;
+  }
+}
