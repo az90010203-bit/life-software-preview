@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1672" height="940" viewBox="0 0 1672 940">
+  <defs><mask id="glass" maskUnits="userSpaceOnUse" x="0" y="0" width="1672" height="940">
+  <path fill="white" d="M0 0H462L1008 139Q1043 149 1056 183L1097 501Q1108 556 1070 575L94 633L0 241Z"/>
+  <!-- The near plant and lamp belong inside the room, in front of the glass. -->
+  <path fill="black" d="M0 455L40 490L52 526L99 527L114 539L163 539L190 546L205 559L199 566L113 563L110 672H0Z"/>
+  </mask></defs><rect width="1672" height="940" fill="white" mask="url(#glass)"/>
+</svg>

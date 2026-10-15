@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "test": "vite build --ssr tests/platform.test.ts --outDir output/plugin-tests && node --test output/plugin-tests/platform.test.js",
+    "test": "vite build --ssr tests/platform.test.ts --outDir output/plugin-tests && node --test output/plugin-tests/platform.test.js && vite build --ssr tests/scene.test.ts --outDir output/scene-tests && node --test output/scene-tests/scene.test.js",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && vite build",

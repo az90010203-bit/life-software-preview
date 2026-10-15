@@ -8,7 +8,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import Icon from './components/Icons';
-import SceneBackground, { useSceneMotion } from './components/SceneBackground';
+import SceneBackground from './components/SceneBackground';
+import SceneControls from './scene/SceneControls';
+import { useScenePreferences } from './scene/useScene';
 import {
   PluginProviders,
   PluginView,
@@ -74,7 +76,25 @@ function WorkspaceDesk() {
     icon: 'plus' as const,
     mode: 'panel' as const,
   };
-  const sceneMotion = useSceneMotion();
+  const scene = useScenePreferences();
+  const [sceneOpen, setSceneOpen] = useState(false);
+  const sceneButton = useRef<HTMLButtonElement>(null);
+  function closeScene() {
+    setSceneOpen(false);
+    sceneButton.current?.focus({ preventScroll: true });
+  }
+  useEffect(() => {
+    if (library || about || editing) setSceneOpen(false);
+  }, [library, about, editing]);
+  useEffect(() => {
+    if (!sceneOpen) return;
+    function outside(event: globalThis.PointerEvent) {
+      if (!(event.target instanceof Element) || event.target.closest('[data-scene-controls], [data-scene-trigger]')) return;
+      setSceneOpen(false);
+    }
+    document.addEventListener('pointerdown', outside);
+    return () => document.removeEventListener('pointerdown', outside);
+  }, [sceneOpen]);
   // Store panel dimensions in desktop design units, so a smaller viewport
   // preserves breathing room without changing the user's saved arrangement.
   const widthScale = Math.min(1, canvas.width / 1220);
@@ -400,10 +420,10 @@ function WorkspaceDesk() {
     return () => window.removeEventListener('keydown', onKey);
   }, [library, about, editing]);
   return (
-    <div className={'observatory ' + (editing ? 'is-arranging' : '')}>
+    <div className={'observatory ' + (editing ? 'is-arranging' : '')} data-scene-phase={scene.phase}>
       <SceneBackground
-        src={import.meta.env.BASE_URL + 'art/observatory.png'}
-        animated={sceneMotion.animated}
+        settings={scene.settings}
+        reduced={scene.reduced}
         arranging={editing}
       />
       <header className="app-header">
@@ -415,26 +435,16 @@ function WorkspaceDesk() {
         </div>
         <div className="header-actions">
           <button
-            className="round-control scene-motion-control"
-            aria-label={
-              sceneMotion.reduced
-                ? '背景静止：跟随系统减少动态效果设置'
-                : sceneMotion.animated
-                  ? '暂停背景动态'
-                  : '开启背景动态'
-            }
-            aria-pressed={sceneMotion.animated}
-            title={
-              sceneMotion.reduced
-                ? '跟随系统减少动态效果设置'
-                : sceneMotion.animated
-                  ? '暂停背景动态'
-                  : '开启背景动态'
-            }
-            disabled={sceneMotion.reduced}
-            onClick={sceneMotion.toggle}
+            ref={sceneButton}
+            data-scene-trigger
+            className={'round-control scene-motion-control ' + (sceneOpen ? 'is-active' : '')}
+            aria-label="场景设置"
+            aria-expanded={sceneOpen}
+            aria-haspopup="dialog"
+            title="场景设置"
+            onClick={() => { setAbout(false); setLibrary(false); setSceneOpen(!sceneOpen); }}
           >
-            <Icon name={sceneMotion.animated ? 'pause' : 'play'} size={20} />
+            <Icon name="today" size={20} />
           </button>
           <button
             className={'arrange-control ' + (editing ? 'is-active' : '')}
@@ -449,6 +459,10 @@ function WorkspaceDesk() {
           </button>
         </div>
       </header>
+      {sceneOpen && <>
+        <SceneControls settings={scene.settings} onChange={scene.setSettings} reduced={scene.reduced} phase={scene.phase} onClose={closeScene} />
+        {!scene.stored && <p className="scene-storage-notice" role="status">场景偏好暂存于本次打开的页面。</p>}
+      </>}
       <div className="workspace-date">{today}</div>
       {editing && <p className="arrange-hint">拖动标题栏移动 · 右下角调整大小 · 菜单切换显示方式</p>}
       <main
