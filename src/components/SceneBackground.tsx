@@ -1,8 +1,23 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { observatoryPack, type ScenePack } from '../scene/pack';
+import { observatoryPack, type SceneCloudLayer, type ScenePack } from '../scene/pack';
 import { useSceneRuntime } from '../scene/useScene';
 import type { SceneEventInstance, SceneSettings } from '../scene/types';
 import './SceneBackground.css';
+
+function CloudLayer({ layer }: { layer: SceneCloudLayer }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  const style = {
+    left: layer.left, top: layer.top, width: layer.tileWidth, height: layer.height, opacity: layer.opacity,
+    '--cloud-duration': `${layer.tileWidth / layer.speed}s`,
+    '--cloud-delay': `${-layer.offset / layer.speed}s`,
+  } as CSSProperties;
+  return <div className="scene-cloud-layer" data-cloud-layer={layer.id} style={style}>
+    <div className="scene-cloud-track">
+      {[0, 1].map((tile) => <img key={tile} src={layer.src} alt="" draggable={false} onError={() => setFailed(true)} />)}
+    </div>
+  </div>;
+}
 
 function PassingEvent({ event, pack, paused }: { event: SceneEventInstance; pack: ScenePack; paused: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -85,8 +100,9 @@ export default function SceneBackground({ settings, reduced, arranging, pack = o
         {eventRoute?.depth === 'far' && event}
         <img className="scene-original scene-city" src={pack.backdrop} alt="" draggable={false} style={{ maskImage: `url("${pack.cityMask}")`, WebkitMaskImage: `url("${pack.cityMask}")` }} />
         {eventRoute?.depth === 'near' && event}
-        <div className="scene-cloud-ribbon scene-cloud-ribbon--one" />
-        {!runtime.small && <div className="scene-cloud-ribbon scene-cloud-ribbon--two" />}
+        <div className="scene-cloud-sea">
+          {pack.clouds?.filter((_, index) => !runtime.small || index === 0).map((layer) => <CloudLayer key={pack.id + layer.id} layer={layer} />)}
+        </div>
         <div className="scene-sky-dawn" />
         <div className="scene-sky-dusk" />
         <div className="scene-sky-night" />

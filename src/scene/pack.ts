@@ -5,6 +5,17 @@ export type SceneRoute = BaseSceneRoute & {
   opacity: number;
   reverse?: boolean;
 };
+export type SceneCloudLayer = {
+  id: string;
+  src: string;
+  tileWidth: number;
+  height: number;
+  top: number;
+  left: number;
+  opacity: number;
+  speed: number;
+  offset: number;
+};
 export type ScenePack = {
   id: string;
   version: 1;
@@ -14,6 +25,7 @@ export type ScenePack = {
   windowMask: string;
   cityMask: string;
   video?: string;
+  clouds?: readonly SceneCloudLayer[];
   ships: Record<string, string>;
   routes: SceneRoute[];
   events: SceneEventDefinition[];
@@ -33,6 +45,10 @@ export const observatoryPack: ScenePack = {
   backdrop: art + 'observatory.png',
   windowMask: art + 'scene-v1/window-mask.svg',
   cityMask: art + 'scene-v1/city-mask.svg',
+  clouds: [
+    { id: 'cloud-sea', src: art + 'scene-v1/cloud-bank.png', tileWidth: 1560, height: 1040, top: -40, left: -40, opacity: .88, speed: 3.2, offset: 420 },
+    { id: 'cloud-horizon', src: art + 'scene-v1/cloud-bank.png', tileWidth: 2100, height: 1400, top: 100, left: -200, opacity: .38, speed: 1.5, offset: 1030 },
+  ],
   ships: { shuttle: art + 'scene-v1/shuttle.png', cruiser: art + 'scene-v1/cruiser.png' },
   routes: [
     { id: 'shuttle-east', depth: 'far', from: { x: -170, y: 280 }, to: { x: 1160, y: 245 }, width: 116, opacity: .65 },
