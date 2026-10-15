@@ -686,6 +686,22 @@ svg {
 .dock-summary {
   gap: 11px;
 }
+.plugin-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+}
+.plugin-status > i {
+  width: 1px;
+  height: 15px;
+  background: #adbfcc66;
+  margin-right: 2px;
+}
+.plugin-fallback {
+  padding: 16px 20px;
+  font-size: 12px;
+  line-height: 1.8;
+}
 .dock-summary .latin {
   font-size: 20px;
   color: #375365;
@@ -1359,7 +1375,13 @@ svg {
   .dock-summary .latin {
     font-size: 17px;
   }
-  .dock-summary > span:last-child {
+  .dock-summary .plugin-status:last-child > span:last-child {
+    display: none;
+  }
+  .dock-summary .plugin-status {
+    gap: 5px;
+  }
+  .plugin-status > i {
     display: none;
   }
   .workspace-footer {

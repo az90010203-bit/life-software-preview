@@ -10,12 +10,12 @@ import {
 import Icon from './components/Icons';
 import SceneBackground, { useSceneMotion } from './components/SceneBackground';
 import {
-  WidgetDataProvider,
-  WidgetContent,
-  useWidgetSummary,
-} from './components/WidgetContent';
+  PluginProviders,
+  PluginView,
+  PluginStatuses,
+} from './platform/PluginHost';
+import { pluginRegistry, primaryPluginId } from './plugins';
 import {
-  WIDGETS,
   createItem,
   loadWorkspace,
   saveWorkspace,
@@ -37,7 +37,7 @@ type Gesture = {
   item: DeskItem;
   element: HTMLElement;
 };
-const kinds: WidgetKind[] = ['notes', 'calendar', 'today'];
+const kinds = pluginRegistry.list.map((plugin) => plugin.manifest.id);
 const modes: WidgetMode[] = ['icon', 'card', 'panel'];
 const modeTitles: Record<WidgetMode, string> = {
   icon: '图标',
@@ -54,7 +54,7 @@ function WorkspaceDesk() {
   const [library, setLibrary] = useState(false);
   const [about, setAbout] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(
-    initial.items.find((i) => i.kind === 'notes')?.id ??
+    initial.items.find((i) => i.kind === primaryPluginId)?.id ??
       initial.items[0]?.id ??
       null,
   );
@@ -67,15 +67,20 @@ function WorkspaceDesk() {
   const [addMode, setAddMode] = useState<WidgetMode>('card');
   const canvasRef = useRef<HTMLDivElement>(null);
   const gesture = useRef<Gesture | null>(null);
-  const focusNoteId = useRef<string | null>(null);
+  const focusWidgetId = useRef<string | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
-  const summary = useWidgetSummary();
+  const primaryAction = pluginRegistry.describe(primaryPluginId)
+    .quickAction ?? {
+    label: '添加组件',
+    icon: 'plus' as const,
+    mode: 'panel' as const,
+  };
   const sceneMotion = useSceneMotion();
   const selected = items.find((i) => i.id === activeId);
   const topTitle = editing
     ? '布置空间'
     : selected
-      ? WIDGETS[selected.kind].title
+      ? pluginRegistry.describe(selected.kind).title
       : '我的空间';
   const today = new Intl.DateTimeFormat('zh-CN', {
     timeZone: 'Asia/Tokyo',
@@ -102,13 +107,15 @@ function WorkspaceDesk() {
     return () => window.clearTimeout(timer);
   }, [items]);
   useEffect(() => {
-    if (!focusNoteId.current) return;
-    const id = focusNoteId.current;
+    if (!focusWidgetId.current) return;
+    const id = focusWidgetId.current;
     const timer = window.setTimeout(() => {
       document
-        .querySelector<HTMLElement>('[data-widget-id="' + id + '"] textarea')
+        .querySelector<HTMLElement>(
+          '[data-widget-id="' + id + '"] [data-plugin-focus]',
+        )
         ?.focus();
-      focusNoteId.current = null;
+      focusWidgetId.current = null;
     }, 80);
     return () => window.clearTimeout(timer);
   }, [items, focusRequest]);
@@ -151,7 +158,10 @@ function WorkspaceDesk() {
     ]);
     setActiveId(item.id);
     setEditing(true);
-    setToast({ text: WIDGETS[kind].title + '已放进空间，可以拖动标题栏。' });
+    setToast({
+      text:
+        pluginRegistry.describe(kind).title + '已放进空间，可以拖动标题栏。',
+    });
   }
   function remove(id: string) {
     const item = items.find((i) => i.id === id);
@@ -159,7 +169,10 @@ function WorkspaceDesk() {
     setItems((current) => current.filter((i) => i.id !== id));
     if (activeId === id) setActiveId(null);
     setToast({
-      text: '已收起' + WIDGETS[item.kind].title + '，内容仍然保留。',
+      text:
+        '已收起' +
+        pluginRegistry.describe(item.kind).title +
+        '，内容仍然保留。',
       removed: item,
     });
   }
@@ -219,7 +232,7 @@ function WorkspaceDesk() {
       box = snapped.box;
       setGuides(snapped.guides);
     } else {
-      const min = WIDGETS[current.item.kind].minPanel;
+      const min = pluginRegistry.describe(current.item.kind).minPanel;
       box = {
         ...current.box,
         width: Math.min(
@@ -248,9 +261,12 @@ function WorkspaceDesk() {
                   : 0,
               ...(current.type === 'resize'
                 ? {
-                    width: Math.max(WIDGETS[i.kind].minPanel.width, box.width),
+                    width: Math.max(
+                      pluginRegistry.describe(i.kind).minPanel.width,
+                      box.width,
+                    ),
                     height: Math.max(
-                      WIDGETS[i.kind].minPanel.height,
+                      pluginRegistry.describe(i.kind).minPanel.height,
                       box.height,
                     ),
                   }
@@ -324,19 +340,24 @@ function WorkspaceDesk() {
       ),
     );
   }
-  function quickNote() {
+  function openPrimaryPlugin() {
+    if (!primaryPluginId) {
+      setLibrary(true);
+      return;
+    }
     setLibrary(false);
     setEditing(false);
-    const note =
-      items.find((i) => i.id === activeId && i.kind === 'notes') ??
-      items.find((i) => i.kind === 'notes');
-    if (note) {
-      focusNoteId.current = note.id;
-      if (note.mode === 'panel') activate(note.id);
-      else changeMode(note.id, 'panel');
+    const targetInstance =
+      items.find((i) => i.id === activeId && i.kind === primaryPluginId) ??
+      items.find((i) => i.kind === primaryPluginId);
+    if (targetInstance) {
+      focusWidgetId.current = targetInstance.id;
+      if (targetInstance.mode === primaryAction.mode)
+        activate(targetInstance.id);
+      else changeMode(targetInstance.id, primaryAction.mode);
     } else {
-      const item = createItem('notes', 'panel', items);
-      focusNoteId.current = item.id;
+      const item = createItem(primaryPluginId, primaryAction.mode, items);
+      focusWidgetId.current = item.id;
       setItems((current) => [...current, item]);
       setActiveId(item.id);
     }
@@ -395,15 +416,32 @@ function WorkspaceDesk() {
           <small className="latin">PERSONAL SPACE</small>
         </div>
         <div className="header-actions">
-          <button className="preview-tag" aria-label="查看预览说明" title="预览说明" onClick={() => setAbout(!about)}>
+          <button
+            className="preview-tag"
+            aria-label="查看预览说明"
+            title="预览说明"
+            onClick={() => setAbout(!about)}
+          >
             <span className="preview-tag-label">交互预览</span>
             <Icon name="info" size={19} className="preview-tag-icon" />
           </button>
           <button
             className="round-control scene-motion-control"
-            aria-label={sceneMotion.reduced ? '背景静止：跟随系统减少动态效果设置' : sceneMotion.animated ? '暂停背景动态' : '开启背景动态'}
+            aria-label={
+              sceneMotion.reduced
+                ? '背景静止：跟随系统减少动态效果设置'
+                : sceneMotion.animated
+                  ? '暂停背景动态'
+                  : '开启背景动态'
+            }
             aria-pressed={sceneMotion.animated}
-            title={sceneMotion.reduced ? '跟随系统减少动态效果设置' : sceneMotion.animated ? '暂停背景动态' : '开启背景动态'}
+            title={
+              sceneMotion.reduced
+                ? '跟随系统减少动态效果设置'
+                : sceneMotion.animated
+                  ? '暂停背景动态'
+                  : '开启背景动态'
+            }
             disabled={sceneMotion.reduced}
             onClick={sceneMotion.toggle}
           >
@@ -451,7 +489,7 @@ function WorkspaceDesk() {
         )}
         {items.map((item) => {
           const box = getBox(item),
-            descriptor = WIDGETS[item.kind];
+            descriptor = pluginRegistry.describe(item.kind);
           const style: CSSProperties = {
             left: box.x,
             top: box.y,
@@ -537,8 +575,8 @@ function WorkspaceDesk() {
                 </button>
               ) : (
                 <div className="widget-content">
-                  <WidgetContent
-                    kind={item.kind}
+                  <PluginView
+                    pluginId={item.kind}
                     mode={item.mode}
                     instanceId={item.id}
                   />
@@ -605,17 +643,19 @@ function WorkspaceDesk() {
             {kinds.map((kind) => (
               <div className="library-entry" key={kind}>
                 <span className="library-symbol">
-                  <Icon name={WIDGETS[kind].icon} size={27} />
+                  <Icon name={pluginRegistry.describe(kind).icon} size={27} />
                 </span>
                 <div>
-                  <h3>{WIDGETS[kind].title}</h3>
-                  <p>{WIDGETS[kind].description}</p>
+                  <h3>{pluginRegistry.describe(kind).title}</h3>
+                  <p>{pluginRegistry.describe(kind).description}</p>
                   <small>
                     已放置 {items.filter((i) => i.kind === kind).length} 个
                   </small>
                 </div>
                 <button
-                  aria-label={'添加' + WIDGETS[kind].title + '组件'}
+                  aria-label={
+                    '添加' + pluginRegistry.describe(kind).title + '组件'
+                  }
                   title="添加一份"
                   onClick={() => add(kind)}
                 >
@@ -626,7 +666,7 @@ function WorkspaceDesk() {
           </div>
           <div className="library-foot">
             <p>收起组件会保留内容。布局与记录仅保存在当前浏览器。</p>
-            <small>当前提供内置示例组件</small>
+            <small>当前提供内置插件</small>
           </div>
         </aside>
       )}
@@ -642,13 +682,23 @@ function WorkspaceDesk() {
           <h2>一个由你布置的空间</h2>
           <p>拖动、增减、缩放组件，也可以把同一功能切换成图标、卡片或面板。</p>
           <p>
-            这是桌面布局与模块呈现的交互预览。记录和布局仅保存在当前浏览器，插件安装与云同步尚未接入。
+            这是桌面布局与模块呈现的交互预览。记录和布局仅保存在当前浏览器。当前支持内置插件接入，外部插件包安装与云同步尚未接入。
           </p>
           <p>手机以列表展示，保留电脑的桌面位置。</p>
-          <p>右上角可暂停背景动态。书写、布置空间或离开页面时，动态会自动暂停。</p>
+          <p>
+            右上角可暂停背景动态。书写、布置空间或离开页面时，动态会自动暂停。
+          </p>
           <p>
             字体采用 HarmonyOS Sans（鸿蒙 Sans）。{' '}
-            <a href={import.meta.env.BASE_URL + 'fonts/HarmonyOS-Sans-LICENSE.txt'} target="_blank" rel="noreferrer">许可声明</a>
+            <a
+              href={
+                import.meta.env.BASE_URL + 'fonts/HarmonyOS-Sans-LICENSE.txt'
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              许可声明
+            </a>
           </p>
         </aside>
       )}
@@ -687,20 +737,12 @@ function WorkspaceDesk() {
             <span>{editing ? '完成布置' : '布置空间'}</span>
           </button>
         </div>
-        <button className="dock-primary" onClick={quickNote}>
-          <Icon name="plus" size={26} />
-          记一下
+        <button className="dock-primary" onClick={openPrimaryPlugin}>
+          <Icon name={primaryAction.icon} size={26} />
+          {primaryAction.label}
         </button>
         <div className="dock-side dock-summary">
-          <span className="latin">
-            {String(summary.notesCount).padStart(2, '0')}
-          </span>
-          <span>片段</span>
-          <i />
-          <span className="latin">
-            {String(summary.calendarDays).padStart(2, '0')}
-          </span>
-          <span>留下的日子</span>
+          <PluginStatuses />
         </div>
       </div>
     </div>
@@ -708,8 +750,8 @@ function WorkspaceDesk() {
 }
 export default function WorkspacePrototype() {
   return (
-    <WidgetDataProvider>
+    <PluginProviders>
       <WorkspaceDesk />
-    </WidgetDataProvider>
+    </PluginProviders>
   );
 }
